@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace GreedyBestFirstSearchGUI
 {
-    public class NetworkNode
+    public class AirportNode
     {
         public string Id { get; set; }
         public string Label { get; set; }
@@ -11,10 +11,10 @@ namespace GreedyBestFirstSearchGUI
         public float Y { get; set; }
         public bool IsSelected { get; set; }
 
-        // Vecinos: Nodo adyacente y la latencia real en milisegundos
-        public Dictionary<NetworkNode, double> Neighbors { get; } = new Dictionary<NetworkNode, double>();
+        // Vecinos: Aeropuerto conectado y distancia de vuelo real en kilómetros (o tiempo real en horas)
+        public Dictionary<AirportNode, double> Neighbors { get; } = new Dictionary<AirportNode, double>();
 
-        public NetworkNode(string id, string label, float x, float y)
+        public AirportNode(string id, string label, float x, float y)
         {
             Id = id;
             Label = label;
@@ -22,38 +22,38 @@ namespace GreedyBestFirstSearchGUI
             Y = y;
         }
 
-        public void AddNeighbor(NetworkNode target, double latencyMs)
+        public void AddNeighbor(AirportNode target, double distanceKm)
         {
-            Neighbors[target] = latencyMs;
-            target.Neighbors[this] = latencyMs; // Enlace bidireccional
+            Neighbors[target] = distanceKm;
+            target.Neighbors[this] = distanceKm; // Ruta aérea bidireccional
         }
 
         /// <summary>
-        /// Heurística h(n): Estimación de latencia basada en distancia geográfica (velocidad de propagación en fibra óptica).
+        /// Heurística h(n): Estimación de distancia ortodrómica / en línea recta (vuelo de pájaro) hacia el aeropuerto destino.
+        /// Escala cartográfica: 1 unidad visual = ~10 km.
         /// </summary>
-        public double EstimateLatencyTo(NetworkNode target)
+        public double EstimateDistanceTo(AirportNode target)
         {
             double dx = X - target.X;
             double dy = Y - target.Y;
-            double distanceKm = Math.Sqrt(dx * dx + dy * dy);
-            // Estimación física: ~5 ms por cada 100 km en línea recta
-            return Math.Round(distanceKm * 0.05, 1);
+            double directDistKm = Math.Sqrt(dx * dx + dy * dy) * 10.0;
+            return Math.Round(directDistKm, 0);
         }
     }
 
-    public class PacketSearchState
+    public class FlightSearchState
     {
-        public NetworkNode Node { get; }
-        public PacketSearchState? Parent { get; }
-        public double HeuristicLatency { get; }  // h(n)
-        public double RealCumulativeLatency { get; } // g(n) acumulada
+        public AirportNode Node { get; }
+        public FlightSearchState? Parent { get; }
+        public double HeuristicDistance { get; } // h(n) en km
+        public double RealCumulativeDistance { get; } // g(n) en km recorridos
 
-        public PacketSearchState(NetworkNode node, PacketSearchState? parent, double heuristicLatency, double realCumulativeLatency)
+        public FlightSearchState(AirportNode node, FlightSearchState? parent, double heuristicDistance, double realCumulativeDistance)
         {
             Node = node;
             Parent = parent;
-            HeuristicLatency = heuristicLatency;
-            RealCumulativeLatency = realCumulativeLatency;
+            HeuristicDistance = heuristicDistance;
+            RealCumulativeDistance = realCumulativeDistance;
         }
     }
 }
